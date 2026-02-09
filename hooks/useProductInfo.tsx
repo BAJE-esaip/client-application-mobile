@@ -1,6 +1,6 @@
 // hooks/useProductInfo.ts
 import { useState } from "react";
-import { API_ROUTES } from "@/config/api";
+import { API_ROUTES, USE_MOCK_API } from "@/config/api";
 
 export type ProductInfo = {
     product_id: number;
@@ -36,20 +36,20 @@ export const useProductInfo = () => {
         try {
             console.log("🔍 Recherche du produit :", barcode);
 
-            // 🚧 MODE MOCK - À REMPLACER PAR L'API RÉELLE
-            // Pour le moment, on retourne des données mockées
-            const mockProduct = await getMockProduct(barcode);
+            if (USE_MOCK_API) {
+                // 🚧 MODE MOCK - À REMPLACER PAR L'API RÉELLE
+                const mockProduct = await getMockProduct(barcode);
 
-            if (mockProduct) {
-                setProductInfo(mockProduct);
-                console.log("✅ Produit trouvé :", mockProduct);
-                return mockProduct;
+                if (mockProduct) {
+                    setProductInfo(mockProduct);
+                    console.log("✅ Produit trouvé :", mockProduct);
+                    return mockProduct;
+                }
+
+                throw new Error("Produit non trouvé");
             }
 
-            /*
-            // 🔥 CODE À ACTIVER QUAND L'API SERA PRÊTE :
-
-            const response = await fetch(`${API_ROUTES.products}/${barcode}`, {
+            const response = await fetch(`${API_ROUTES.products}/${encodeURIComponent(barcode)}`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
@@ -83,7 +83,6 @@ export const useProductInfo = () => {
             setProductInfo(result);
             console.log("✅ Produit trouvé :", result);
             return result;
-            */
 
         } catch (err: any) {
             console.log("❌ Erreur lors de la récupération du produit :", err.message);
