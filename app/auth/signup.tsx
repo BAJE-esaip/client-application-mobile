@@ -15,8 +15,6 @@ import { Input } from "@/components/ui/Input";
 import { PrimaryButton } from "@/components/ui/Button";
 import { API_ROUTES } from "@/config/api";
 export default function SignUpScreen() {
-    const [firstName, setFirstName] = useState("");
-    const [lastName, setLastName] = useState("");
     const [email, setEmail] = useState("");
     const [plainPassword, setPassword] = useState("");
 
@@ -24,49 +22,69 @@ export default function SignUpScreen() {
     const [loading, setLoading] = useState(false);
 
     const signup = async () => {
+        console.log("🟦 [SIGNUP] Début inscription");
+
         setError(null);
 
-        if (!firstName || !lastName || !email || !plainPassword) {
+        if (!email || !plainPassword) {
+            console.log("🟥 [SIGNUP] Champs manquants");
             setError("Veuillez remplir tous les champs.");
             return;
         }
 
+        console.log("🟨 [SIGNUP] Données envoyées :", {
+            email,
+            password: "******",
+        });
+
         setLoading(true);
 
         try {
+            console.log("🟦 [SIGNUP] Appel API :", API_ROUTES.clients);
+
             const response = await fetch(API_ROUTES.clients, {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
+                    "Content-Type": "application/ld+json",
+                    "Accept": "application/ld+json",
                 },
                 body: JSON.stringify({
-                    firstName,
-                    lastName,
                     email,
-                    plainPassword,
+                    password: plainPassword,
                 }),
             });
 
-            const result = await response.json();
+            console.log("🟩 [SIGNUP] Réponse reçue, status :", response.status);
+
+            const text = await response.text();
+            console.log("🟩 [SIGNUP] Réponse brute :", text);
+
+            const result = text ? JSON.parse(text) : null;
 
             if (!response.ok) {
-                const errorMessage =
-                    result["hydra:description"] ||
-                    result.detail ||
-                    "Impossible de créer le compte.";
-                throw new Error(errorMessage);
+                console.log("🟥 [SIGNUP] Erreur API :", result);
+                throw new Error(
+                    result?.["hydra:description"] ||
+                    result?.detail ||
+                    "Impossible de créer le compte."
+                );
             }
 
-            // Redirection vers la page de connexion
-            router.replace("auth/login");
+            console.log("✅ [SIGNUP] Compte créé avec succès");
+            console.log("➡️ [SIGNUP] Redirection vers auth/login");
+
+            router.replace("/auth/login");
 
         } catch (e: any) {
-            setError(e.message);
+            console.log("🔥 [SIGNUP] ERREUR FATALE :", e);
+            setError(e.message || "Erreur réseau");
+        } finally {
+            setLoading(false);
+            console.log("🟦 [SIGNUP] Fin inscription");
         }
-
-        setLoading(false);
     };
+
+
 
     const gradientColors = ['#6A9AFE', '#2B69D8'];
 
@@ -88,23 +106,6 @@ export default function SignUpScreen() {
                     >
                         <View style={styles.formContainer}>
                             <Text style={styles.title}>Créer un compte</Text>
-
-                            <Input
-                                placeholder="Prénom"
-                                value={firstName}
-                                onChangeText={setFirstName}
-                                style={styles.input}
-                                placeholderTextColor="#555"
-                            />
-
-                            <Input
-                                placeholder="Nom"
-                                value={lastName}
-                                onChangeText={setLastName}
-                                style={styles.input}
-                                placeholderTextColor="#555"
-                            />
-
                             <Input
                                 placeholder="Email"
                                 value={email}

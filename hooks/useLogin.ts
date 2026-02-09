@@ -1,14 +1,7 @@
-// hooks/useLogin.ts
 import { useState } from "react";
 import { router } from "expo-router";
 import { useAuth } from "@/hooks/useAuth";
 import { API_ROUTES } from "@/config/api";
-
-type LoginResponse = {
-    token: string;
-    user: any;
-    message?: string;
-};
 
 export const useLogin = () => {
     const [email, setEmail] = useState("");
@@ -33,39 +26,22 @@ export const useLogin = () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Accept": "application/json",
                 },
                 body: JSON.stringify({ email, password }),
             });
 
-            // 🔥 IMPORTANT : lire en texte d'abord
+            // ✅ SI 200 → LOGIN OK, MÊME SANS BODY
+            if (response.ok) {
+                setIsLogged(true);
+                router.replace("(tabs)");
+                return;
+            }
+
+            // ❌ Si pas OK, on tente de lire l’erreur
             const text = await response.text();
-
-            if (!text) {
-                throw new Error("Réponse serveur vide");
-            }
-
-            let result: LoginResponse;
-            try {
-                result = JSON.parse(text);
-            } catch (e) {
-                console.log("❌ Réponse brute serveur :", text);
-                throw new Error("Réponse serveur invalide (pas du JSON)");
-            }
-
-            if (!response.ok) {
-                throw new Error(result.message || "Identifiants incorrects");
-            }
-
-            console.log("✅ Token :", result.token);
-            console.log("✅ User :", result.user);
-
-            // ✅ LOGIN OK
-            setIsLogged(true);
-            router.replace("(tabs)");
+            throw new Error(text || "Identifiants incorrects");
 
         } catch (err: any) {
-            console.log("❌ Erreur login :", err.message);
             setError(err.message);
         } finally {
             setIsLoading(false);
